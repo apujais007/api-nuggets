@@ -25,8 +25,7 @@ jobs:
 
       - name: Run update script
         run: |
-          python fetch_price_changes.py
-          python fetch_grade_updates.py
+          python db_scripts/grade_change_db.py
 
       - name: Commit DB changes
         run: |
