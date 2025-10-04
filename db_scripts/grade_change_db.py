@@ -9,6 +9,7 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
 DB_FILE = "data/stocks.db"
+os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
