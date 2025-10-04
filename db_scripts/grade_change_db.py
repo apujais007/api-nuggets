@@ -48,7 +48,7 @@ def insert_df_to_db(df, table, conn):
 def get_json(url, params=None):
     if params is None:
         params = {}
-    params['apikey'] = os.environ["FMP_API_KEY"] # Use the API key directly
+    params['apikey'] = {API_KEY}
     r = requests.get(url, params=params)
     if r.status_code == 200:
         return r.json()
@@ -160,7 +160,7 @@ def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
 def send_updates():
 
   top_100_tickers = fetch_sp500_symbols(top_n=100)
-  api_key = os.environ["FMP_API_KEY"]
+  api_key = {API_KEY}
 
   #matches = get_upgraded_downgraded_symbols(symbols, api_key,debug=True)
   #matches = get_upgraded_downgraded_symbols(top_100_tickers, api_key,debug=True, test_date="2025-09-15")
@@ -173,9 +173,6 @@ def send_updates():
   length=insert_df_to_db(df_grades, "grades_updates", conn)
   print(length)
   
-  BOT_TOKEN = "7574321003:AAGtyMbmdXHEGWX1hMifdr-Y2wM4-kPRPVs"
-  CHAT_ID = "411939711"
-
   header = "`{:<6} {:<10} {:<12} {:<6}`".format(
     "Symbol", "Date","Company", "Action"
   )
