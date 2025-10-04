@@ -8,7 +8,7 @@ API_KEY = os.environ.get("FMP_API_KEY")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-DB_FILE = "stocks.db"
+DB_FILE = "data/stocks.db"
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
