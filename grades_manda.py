@@ -1,0 +1,214 @@
+import os
+import requests
+import pandas as pd
+from datetime import datetime, timedelta, date
+
+
+def get_json(url, params=None):
+    if params is None:
+        params = {}
+    params['apikey'] = os.environ["FMP_API_KEY"] # Use the API key directly
+    r = requests.get(url, params=params)
+    if r.status_code == 200:
+        return r.json()
+    else:
+        print(f"Error {r.status_code} for URL {url}")
+        return None
+
+def fetch_sp500_symbols(top_n=100):
+    url = "https://financialmodelingprep.com/api/v3/sp500_constituent"
+    data = get_json(url)
+    if not data:
+        return []
+    return [item['symbol'] for item in data][:top_n]
+
+def get_upgraded_downgraded_symbols(symbols, api_key, debug=False, test_date=None):
+    base_url = "https://financialmodelingprep.com/stable/grades"
+
+    today = datetime.today().date()
+
+    if test_date:
+        # Force valid_dates to include the test_date
+        valid_dates = [datetime.strptime(test_date, "%Y-%m-%d").date()]
+    else:
+        # Default: last 3 trading days
+        valid_dates = []
+        day = today
+        while len(valid_dates) < 3:
+            if day.weekday() < 5:
+                valid_dates.append(day)
+            day -= timedelta(days=1)
+
+    if debug:
+        print("Valid dates being checked:", valid_dates)
+
+    result = []
+
+    for symbol in symbols:
+        try:
+            url = f"{base_url}?symbol={symbol}&apikey={api_key}"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data:
+                if debug:
+                    print(f"{symbol}: no data returned")
+                continue
+
+            latest = data[0]
+            grade_date = datetime.strptime(latest["date"], "%Y-%m-%d").date()
+            action = latest["action"].lower()
+
+            if debug:
+                print(f"{symbol}: latest_date={grade_date}, action={action}")
+
+            if grade_date in valid_dates and action in ("upgrade", "downgrade"):
+                result.append(symbol)
+
+        except Exception as e:
+            print(f"Error processing {symbol}: {e}")
+
+    if debug:
+        print("Final result:", result)
+
+    return result
+
+
+def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
+    """
+    Fetch the top N grade changes per symbol and return a combined DataFrame.
+
+    Args:
+        symbols (list): List of stock symbols.
+        api_key (str): FMP API key.
+        top_n (int): Number of top records to fetch per symbol.
+        debug (bool): Print debug info if True.
+
+    Returns:
+        pd.DataFrame: Combined DataFrame of all symbols with top N grade changes.
+    """
+    base_url = "https://financialmodelingprep.com/stable/grades"
+    all_records = []
+
+    for symbol in symbols:
+        try:
+            url = f"{base_url}?symbol={symbol}&apikey={api_key}"
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data:
+                if debug:
+                    print(f"{symbol}: No data returned")
+                continue
+
+            # Take top N records
+            for record in data[:top_n]:
+                all_records.append(record)
+                if debug:
+                    print(record)
+
+        except Exception as e:
+            print(f"Error processing {symbol}: {e}")
+
+    # Convert list of dictionaries to DataFrame
+    df = pd.DataFrame(all_records)
+    return df
+
+def fetch_today_ma_all(api_key, debug=False, test_date=None):
+    today = test_date or date.today()
+    results = []
+    page = 0
+    while True:
+        url = f"https://financialmodelingprep.com/stable/mergers-acquisitions-latest?page={page}&limit=1000&apikey={api_key}"
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise Exception(f"Error fetching M&A API: {response.status_code}")
+
+        ma_data = response.json()
+        if debug:
+            print(f"Fetched {len(ma_data)} records from page {page}")
+
+        if not ma_data:
+            break  # no more pages
+
+        results.extend(ma_data)
+        page += 1
+
+    df = pd.DataFrame(results) if results else pd.DataFrame(columns=ma_data[0].keys() if ma_data else [])
+    # filter only for today's date
+    df['transactionDate'] = pd.to_datetime(df['transactionDate'], errors='coerce').dt.date
+    df['acceptedDate'] = pd.to_datetime(df['acceptedDate'], errors='coerce').dt.date
+    df_today = df[(df['transactionDate'] == today) | (df['acceptedDate'] == today)]
+    return df_today
+
+def df_to_telegram_message(df):
+    message = "*Today's M&A Updates:*\n\n"
+    
+    # Loop through each row
+    for _, row in df.iterrows():
+        # First line: Symbol, Target, Date
+        message += f"*{row['symbol']} → {row['targetedSymbol']}* | {row['acceptedDate']}\n"
+        # Second line: clickable link
+        message += f"[View Filing]({row['link']})\n\n"  # extra newline for spacing
+    
+    return message
+
+def send_updates(test_date=None):
+    api_key = os.environ["FMP_API_KEY"] 
+    BOT_TOKEN = "7574321003:AAGtyMbmdXHEGWX1hMifdr-Y2wM4-kPRPVs"
+    CHAT_ID = "411939711"
+    # 1️⃣ SP500 symbols
+    top_100_tickers = fetch_sp500_symbols(top_n=100)
+
+    # 2️⃣ NYSE symbols
+    url = "https://financialmodelingprep.com/stable/company-screener"
+    params = {"exchange": "NYSE","limit": 10000,"apikey": api_key}
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        nyse_stocks = [c["symbol"] for c in data]
+        print(f"Fetched {len(nyse_stocks)} NYSE symbols")
+    else:
+        raise Exception(f"Error fetching company-screener: {response.status_code}, {response.text}")
+
+    # 3️⃣ Upgrades/Downgrades
+    matches = get_upgraded_downgraded_symbols(top_100_tickers, api_key, test_date=test_date)
+    if matches:
+        df_grades = get_top_grade_changes(matches, api_key, top_n=3)
+        if not df_grades.empty:
+            header = "`{:<6} {:<10} {:<12} {:<6}`".format("Symbol","Date","Company","Action")
+            rows = ["`{:<6} {:<10} {:<12} {:<6}`".format(r.symbol,r.date,r.gradingCompany[:12],r.action[:6]) for r in df_grades.itertuples(index=False)]
+            message = "*Today's Stock Grading Updates:*\n\n" + "\n".join([header]+rows)
+            url_telegram = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+            payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
+            resp = requests.post(url_telegram, data=payload)
+            if resp.status_code == 200:
+                print("Grades message sent successfully!")
+            else:
+                print("Failed to send grades message:", resp.text)
+    else:
+        print("No upgrades/downgrades today.")
+
+    # 4️⃣ M&A Updates
+    df_ma = fetch_today_ma_all(api_key, test_date=test_date)
+    if not df_ma.empty:
+        telegram_message = df_to_telegram_message(df_ma)
+        url_telegram = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": CHAT_ID, "text": telegram_message, "parse_mode": "Markdown"}
+        resp = requests.post(url_telegram, data=payload)
+        if resp.status_code == 200:
+            print("M&A message sent successfully!")
+        else:
+            print("Failed to send M&A message:", resp.text)
+    else:
+        print("No M&A deals today.")
+
+# -----------------------------
+# Run
+# -----------------------------
+if __name__ == "__main__":
+    # Optional: pass a test date for testing
+	#send_updates(test_date="2025-10-3")
+    send_updates()
