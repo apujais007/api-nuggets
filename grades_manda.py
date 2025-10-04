@@ -3,11 +3,14 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta, date
 
+API_KEY = os.environ.get("FMP_API_KEY")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 def get_json(url, params=None):
     if params is None:
         params = {}
-    params['apikey'] = os.environ["FMP_API_KEY"] # Use the API key directly
+    params['apikey'] = {API_KEY} # Use the API key directly
     r = requests.get(url, params=params)
     if r.status_code == 200:
         return r.json()
@@ -46,7 +49,7 @@ def get_upgraded_downgraded_symbols(symbols, api_key, debug=False, test_date=Non
 
     for symbol in symbols:
         try:
-            url = f"{base_url}?symbol={symbol}&apikey={api_key}"
+            url = f"{base_url}?symbol={symbol}&apikey={API_KEY}"
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
@@ -93,7 +96,7 @@ def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
 
     for symbol in symbols:
         try:
-            url = f"{base_url}?symbol={symbol}&apikey={api_key}"
+            url = f"{base_url}?symbol={symbol}&apikey={API_KEY}"
             response = requests.get(url)
             response.raise_for_status()
             data = response.json()
@@ -121,7 +124,7 @@ def fetch_today_ma_all(api_key, debug=False, test_date=None):
     results = []
     page = 0
     while True:
-        url = f"https://financialmodelingprep.com/stable/mergers-acquisitions-latest?page={page}&limit=1000&apikey={api_key}"
+        url = f"https://financialmodelingprep.com/stable/mergers-acquisitions-latest?page={page}&limit=1000&apikey={API_KEY}"
         response = requests.get(url)
         if response.status_code != 200:
             raise Exception(f"Error fetching M&A API: {response.status_code}")
@@ -156,7 +159,7 @@ def df_to_telegram_message(df):
     return message
 
 def send_updates(test_date=None):
-    api_key = os.environ["FMP_API_KEY"] 
+    api_key = {API_KEY} 
     BOT_TOKEN = "7574321003:AAGtyMbmdXHEGWX1hMifdr-Y2wM4-kPRPVs"
     CHAT_ID = "411939711"
     # 1️⃣ SP500 symbols
