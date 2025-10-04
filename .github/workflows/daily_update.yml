@@ -2,7 +2,7 @@ name: Daily Top Price changes
 
 on:
   schedule:
-    - cron: '0 13 * * *'  # Runs daily at 13:00 UTC (adjust as needed)
+    - cron: '0 14,16,18,20,22 * * 1-5'  # Runs daily at 13:00 UTC (adjust as needed)
   workflow_dispatch:       # Allows manual run from GitHub UI
 
 jobs:
