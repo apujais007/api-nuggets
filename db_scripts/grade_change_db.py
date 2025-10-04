@@ -4,6 +4,9 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 import sqlite3
 
+API_KEY = os.environ.get("FMP_API_KEY")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 DB_FILE = "stocks.db"
 
