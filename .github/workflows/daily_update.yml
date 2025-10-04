@@ -28,4 +28,4 @@ jobs:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python Top_price_changes.ipynb
+        run: python Top_price_changes.py
