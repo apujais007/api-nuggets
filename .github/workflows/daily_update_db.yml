@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 13 * * 1-5'  # every 2 hours 9AM-4PM EST → adjust as needed
   workflow_dispatch:
+  
+permissions:
+  contents: write   # allow push
 
 jobs:
   update-db:
