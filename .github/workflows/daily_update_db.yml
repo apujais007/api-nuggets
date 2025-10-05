@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read   # allow repo read
+  contents: write   # ✅ allow push back to repo
 
 jobs:
   update-csv:
@@ -26,13 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas requests
 
-      - name: Download previous CSV (if exists)
-        uses: actions/download-artifact@v4
-        with:
-          name: grades-csv
-          path: data/
-        continue-on-error: true   # safe if first run
-
       - name: Run update script
         env:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
@@ -41,8 +34,10 @@ jobs:
         run: |
           python db_scripts/grade_change_db.py
 
-      - name: Upload CSV artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: grades-csv
-          path: data/grades_updates.csv
+      - name: Commit and push CSV
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/grades_updates.csv
+          git commit -m "Update grades CSV [skip ci]" || echo "No changes to commit"
+          git push
