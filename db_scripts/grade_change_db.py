@@ -4,10 +4,6 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 import sqlite3
 
-API_KEY = os.environ.get("FMP_API_KEY")
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
-
 DB_FILE = "data/stocks.db"
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
@@ -165,7 +161,7 @@ def send_updates():
   CHAT_ID = os.environ.get("CHAT_ID")
 
   top_100_tickers = fetch_sp500_symbols(top_n=100)
-  api_key = {API_KEY}
+  api_key = API_KEY
 
   #matches = get_upgraded_downgraded_symbols(symbols, api_key,debug=True)
   #matches = get_upgraded_downgraded_symbols(top_100_tickers, api_key,debug=True, test_date="2025-09-15")
@@ -175,12 +171,7 @@ def send_updates():
   df_grades = get_top_grade_changes(symbols_to_check, api_key, top_n=3, debug=False)
 
   conn=init_db()
-  length=insert_df_to_db(df_grades, "grades_updates", conn)
-  print(length)
-  print("FMP API key:", os.environ.get("FMP_API_KEY"))
-  print("Top SP500 tickers:", top_100_tickers)
-  print("Matches:", matches)
-  print("Grades DataFrame shape:", df_grades.shape)  
+  length=insert_df_to_db(df_grades, "grades_updates", conn) 
     
   header = "`{:<6} {:<10} {:<12} {:<6}`".format(
     "Symbol", "Date","Company", "Action"
