@@ -1,23 +1,23 @@
-name: DB update stocks
+name: CSV update stocks
 
 on:
   schedule:
-    - cron: '0 13 * * 1-5'  # every 2 hours 9AM-4PM EST → adjust as needed
+    - cron: '0 13 * * 1-5'  # every weekday at 9AM EST
   workflow_dispatch:
-  
+
 permissions:
-  contents: read   # allow push
+  contents: read   # allow repo read
 
 jobs:
-  update-db:
+  update-csv:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
@@ -26,23 +26,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas requests
 
-      - name: Download previous DB
+      - name: Download previous CSV (if exists)
         uses: actions/download-artifact@v4
         with:
-          name: stocks-db
+          name: grades-csv
           path: data/
-        continue-on-error: true   # first run m
-      
+        continue-on-error: true   # safe if first run
+
       - name: Run update script
         env:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-          CHAT_ID: ${{ secrets.CHAT_ID }}      
+          CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
           python db_scripts/grade_change_db.py
 
-      - name: Upload DB artifact
+      - name: Upload CSV artifact
         uses: actions/upload-artifact@v4
         with:
-          name: stocks-db
-          path: data/stocks.db
+          name: grades-csv
+          path: data/grades_updates.csv
