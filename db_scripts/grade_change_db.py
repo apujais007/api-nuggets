@@ -1,4 +1,5 @@
 import os
+import sys
 import requests
 import pandas as pd
 from datetime import datetime, timedelta, date
@@ -160,7 +161,7 @@ def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
     df = pd.DataFrame(all_records)
     return df
 
-def send_updates():
+def send_updates(test_date=None):
     
   top_100_tickers = fetch_sp500_symbols(top_n=100)
   api_key = API_KEY
@@ -204,4 +205,7 @@ def send_updates():
 
 
 if __name__ == "__main__":
-    send_updates()    
+    test_date = None
+    if len(sys.argv) > 1:
+        test_date = sys.argv[1]  # first argument after script name
+    send_updates(test_date=test_date)
