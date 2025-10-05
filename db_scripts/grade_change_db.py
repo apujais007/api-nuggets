@@ -75,14 +75,14 @@ def get_upgraded_downgraded_symbols(symbols, api_key, debug=False, test_date=Non
         # Force valid_dates to include the test_date
         valid_dates = [datetime.strptime(test_date, "%Y-%m-%d").date()]
     else:
-        valid_dates = [today]
+        # valid_dates = [today]
         # Default: last 3 trading days
-        # valid_dates = []
-        # day = today
-        # while len(valid_dates) < 3:
-        #    if day.weekday() < 5:
-        #        valid_dates.append(day)
-        #    day -= timedelta(days=1)
+        valid_dates = []
+        day = today
+        while len(valid_dates) < 3:
+           if day.weekday() < 5:
+               valid_dates.append(day)
+           day -= timedelta(days=1)
 
     if debug:
         print("Valid dates being checked:", valid_dates)
