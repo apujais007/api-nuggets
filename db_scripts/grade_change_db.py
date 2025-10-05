@@ -52,6 +52,9 @@ def insert_df_to_db(df, table, conn):
     if df.empty:
         return 0
 
+    conn = sqlite3.connect(db_file)
+    c = conn.cursor()
+    
     # Write to temp table first
     temp_table = f"{table}_temp"
     df.to_sql(temp_table, conn, if_exists="replace", index=False)
@@ -62,6 +65,7 @@ def insert_df_to_db(df, table, conn):
         SELECT * FROM {temp_table}
     """)
     conn.commit()
+    conn.close()
     return len(df)
 
 def get_json(url, params=None):
