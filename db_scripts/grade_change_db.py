@@ -40,13 +40,28 @@ def init_db():
     conn.commit()
     return conn
 
+# def insert_df_to_db(df, table, conn):
+#     if df.empty:
+#         return 0
+#     df.to_sql(table, conn, if_exists='append', index=False)
+#     conn.commit()
+#     return len(df)
+
 def insert_df_to_db(df, table, conn):
     if df.empty:
         return 0
-    df.to_sql(table, conn, if_exists='append', index=False)
+
+    # Write to temp table first
+    temp_table = f"{table}_temp"
+    df.to_sql(temp_table, conn, if_exists="replace", index=False)
+
+    # Insert into main table while ignoring duplicates
+    conn.execute(f"""
+        INSERT OR IGNORE INTO {table}
+        SELECT * FROM {temp_table}
+    """)
     conn.commit()
     return len(df)
-
 
 def get_json(url, params=None):
     if params is None:
