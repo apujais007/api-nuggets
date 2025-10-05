@@ -45,7 +45,7 @@ def insert_df_to_db(df, table, conn):
 def get_json(url, params=None):
     if params is None:
         params = {}
-    params['apikey'] = {API_KEY}
+    params['apikey'] = API_KEY
     r = requests.get(url, params=params)
     if r.status_code == 200:
         return r.json()
