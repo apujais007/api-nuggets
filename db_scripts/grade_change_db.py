@@ -17,15 +17,15 @@ def init_db():
     c = conn.cursor()
     c.execute("""
         CREATE TABLE IF NOT EXISTS grades_updates (
-            symbol TEXT,
-            date TEXT,
-            gradingCompany TEXT,
-            previousGrade TEXT,
-            newGrade TEXT,
-            action TEXT,
-            fetch_date TEXT,
-            PRIMARY KEY(symbol, date, gradingCompany)
-        )
+        symbol TEXT,
+        date TEXT,
+        gradingCompany TEXT,
+        previousGrade TEXT,
+        newGrade TEXT,
+        action TEXT,
+        fetch_date TEXT DEFAULT (date('now')),
+        PRIMARY KEY(symbol, date, gradingCompany)    
+    )
     """)
     c.execute("""
         CREATE TABLE IF NOT EXISTS ma_updates (
@@ -33,7 +33,7 @@ def init_db():
             targetedSymbol TEXT,
             acceptedDate TEXT,
             link TEXT,
-            fetch_date TEXT,
+            fetch_date TEXT DEFAULT (date('now')),
             PRIMARY KEY(symbol, targetedSymbol, acceptedDate)
         )
     """)
