@@ -51,9 +51,6 @@ def init_db():
 def insert_df_to_db(df, table, conn):
     if df.empty:
         return 0
-
-    conn = sqlite3.connect(db_file)
-    c = conn.cursor()
     
     # Write to temp table first
     temp_table = f"{table}_temp"
