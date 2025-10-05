@@ -159,6 +159,10 @@ def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
     return df
 
 def send_updates():
+    
+  API_KEY = os.environ.get("FMP_API_KEY")
+  BOT_TOKEN = os.environ.get("BOT_TOKEN")
+  CHAT_ID = os.environ.get("CHAT_ID")
 
   top_100_tickers = fetch_sp500_symbols(top_n=100)
   api_key = {API_KEY}
