@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 import sqlite3
 
-DB_FILE = "data/stocks.db"
+DB_FILE = "data/grades_updates.csv"
 print("DB path:", os.path.abspath(DB_FILE))
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
@@ -13,58 +13,17 @@ API_KEY = os.environ.get("FMP_API_KEY")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS grades_updates (
-        symbol TEXT,
-        date TEXT,
-        gradingCompany TEXT,
-        previousGrade TEXT,
-        newGrade TEXT,
-        action TEXT,
-        fetch_date TEXT,
-        PRIMARY KEY(symbol, date, gradingCompany)    
-    )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS ma_updates (
-            symbol TEXT,
-            targetedSymbol TEXT,
-            acceptedDate TEXT,
-            link TEXT,
-            fetch_date TEXT,
-            PRIMARY KEY(symbol, targetedSymbol, acceptedDate)
-        )
-    """)
-    conn.commit()
-    return conn
-
-# def insert_df_to_db(df, table, conn):
-#     if df.empty:
-#         return 0
-#     df.to_sql(table, conn, if_exists='append', index=False)
-#     conn.commit()
-#     return len(df)
-
-def insert_df_to_db(df, table, conn):
+def append_df_to_csv(df, file_path=DB_FILE):
     if df.empty:
         return 0
-    
-    # Write to temp table first
-    temp_table = f"{table}_temp"
-    df.to_sql(temp_table, conn, if_exists="replace", index=False)
 
-    # Insert into main table while ignoring duplicates
-    conn.execute(f"""
-        INSERT OR IGNORE INTO {table}
-        SELECT * FROM {temp_table}
-    """)
-    conn.commit()
-    conn.close()
+    if not os.path.isfile(file_path):
+        df.to_csv(file_path, mode="w", header=True, index=False)
+    else:
+        df.to_csv(file_path, mode="a", header=False, index=False)
+
     return len(df)
-
+    
 def get_json(url, params=None):
     if params is None:
         params = {}
@@ -189,14 +148,11 @@ def send_updates(test_date=None):
 
   symbols_to_check=matches
   df_grades = get_top_grade_changes(symbols_to_check, api_key, top_n=3, debug=False)
-
-  conn=init_db()
   df_grades['fetch_date'] = datetime.today().strftime("%Y-%m-%d")  
-  length=insert_df_to_db(df_grades, "grades_updates", conn) 
-    
+  length = append_df_to_csv(df_grades)  
   header = "`{:<6} {:<10} {:<12} {:<6}`".format(
     "Symbol", "Date","Company", "Action"
-  )
+    )
 
   rows = [
     "`{:<6} {:<10} {:<12} {:<6}`".format(
