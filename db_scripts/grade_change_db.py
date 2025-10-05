@@ -173,7 +173,11 @@ def send_updates():
   conn=init_db()
   length=insert_df_to_db(df_grades, "grades_updates", conn)
   print(length)
-  
+  print("FMP API key:", os.environ.get("FMP_API_KEY"))
+  print("Top SP500 tickers:", top_100_tickers)
+  print("Matches:", matches)
+  print("Grades DataFrame shape:", df_grades.shape)  
+    
   header = "`{:<6} {:<10} {:<12} {:<6}`".format(
     "Symbol", "Date","Company", "Action"
   )
