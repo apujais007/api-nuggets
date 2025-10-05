@@ -1,0 +1,7 @@
+symbol,date,gradingCompany,previousGrade,newGrade,action,fetch_date
+COIN,2025-10-03,Rothschild & Co,Neutral,Buy,upgrade,2025-10-05
+COIN,2025-08-15,Barclays,Equal Weight,Equal Weight,maintain,2025-10-05
+COIN,2025-08-04,"Keefe, Bruyette & Woods",Market Perform,Market Perform,maintain,2025-10-05
+CTVA,2025-10-03,Keybanc,Overweight,Sector Weight,downgrade,2025-10-05
+CTVA,2025-10-02,Citigroup,Buy,Neutral,downgrade,2025-10-05
+CTVA,2025-10-02,JP Morgan,Neutral,Overweight,upgrade,2025-10-05
