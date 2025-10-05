@@ -43,6 +43,7 @@ def insert_df_to_db(df, table, conn):
     if df.empty:
         return 0
     df.to_sql(table, conn, if_exists='append', index=False)
+    conn.commit()
     return len(df)
 
 
