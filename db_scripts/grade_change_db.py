@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, date
 import sqlite3
 
 DB_FILE = "data/stocks.db"
+print("DB path:", os.path.abspath(DB_FILE))
 os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
 
 API_KEY = os.environ.get("FMP_API_KEY")
