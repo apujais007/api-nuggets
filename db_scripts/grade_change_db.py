@@ -23,7 +23,7 @@ def init_db():
         previousGrade TEXT,
         newGrade TEXT,
         action TEXT,
-        fetch_date TEXT DEFAULT (date('now')),
+        fetch_date TEXT,
         PRIMARY KEY(symbol, date, gradingCompany)    
     )
     """)
@@ -33,7 +33,7 @@ def init_db():
             targetedSymbol TEXT,
             acceptedDate TEXT,
             link TEXT,
-            fetch_date TEXT DEFAULT (date('now')),
+            fetch_date TEXT,
             PRIMARY KEY(symbol, targetedSymbol, acceptedDate)
         )
     """)
@@ -189,6 +189,7 @@ def send_updates(test_date=None):
   df_grades = get_top_grade_changes(symbols_to_check, api_key, top_n=3, debug=False)
 
   conn=init_db()
+  df_grades['fetch_date'] = datetime.today().strftime("%Y-%m-%d")  
   length=insert_df_to_db(df_grades, "grades_updates", conn) 
     
   header = "`{:<6} {:<10} {:<12} {:<6}`".format(
