@@ -161,17 +161,16 @@ def fetch_price_target_trend(symbol):
 
         return {
             "Symbol": symbol,
-            "Latest Date": clean_date(latest["publishedDate"]),
-            "Latest Analyst": latest.get("analystName"),
-            "Latest Firm": latest.get("analystCompany"),
-            "Latest Target": latest_target,
-            "Previous Date": clean_date(previous["publishedDate"]),
-            "Previous Analyst": previous.get("analystName"),
-            "Previous Firm": previous.get("analystCompany"),
-            "Previous Target": prev_target,
+            "Latest_Date": clean_date(latest["publishedDate"]),
+            "Latest_Analyst": latest.get("analystName"),
+            "Latest_Firm": latest.get("analystCompany"),
+            "Latest_Target": latest_target,
+            "Previous_Date": clean_date(previous["publishedDate"]),
+            "Previous_Analyst": previous.get("analystName"),
+            "Previous_Firm": previous.get("analystCompany"),
+            "Previous_Target": prev_target,
             "Trend": trend
         }
-
     except Exception as e:
         print(f"Error processing {symbol}: {e}")
         return None
