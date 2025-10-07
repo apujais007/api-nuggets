@@ -237,15 +237,15 @@ def send_updates(test_date=None):
 
         # Send Price Target Trend to Telegram
         header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-            "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
+            "Symbol", "N_Dt", "N_Firm", "N_Tgt", "Old_Tgt", "Trend"
         )
         rows_trend = [
-            "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+            "`{:<6} {:<12} {:<12} {:<6} {:<6} {:<8}`".format(
                 r.Symbol,
                 r.Latest_Date,
                 (r.Latest_Firm or "")[:12],
                 r.Latest_Target,
-                r.Previous_Date,
+                r.Previous_Target,
                 r.Trend
             )
             for r in df_trends.itertuples(index=False)
