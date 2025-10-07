@@ -257,7 +257,7 @@ def send_updates(test_date=None):
 
     # Rows
     rows_trend = [
-        "`{:<6} {:<8} {:<8} {:<6} {:<6} {:<2}`".format(
+        "`{:<6} {:<6} {:<8} {:<6} {:<6} {:<2}`".format(
             r.Symbol,
             fmt_date(r.Latest_Date),
             (r.Latest_Firm or "")[:8],  # truncate firm name
