@@ -1,10 +1,10 @@
 symbol,date,gradingCompany,previousGrade,newGrade,action
-COIN,2025-10-03,Rothschild & Co,Neutral,Buy,upgrade,
-COIN,2025-08-15,Barclays,Equal Weight,Equal Weight,maintain,
-COIN,2025-08-04,"Keefe, Bruyette & Woods",Market Perform,Market Perform,maintain,
-LII,2025-10-06,Wells Fargo,Underweight,Equal Weight,upgrade,
-LII,2025-09-23,UBS,Neutral,Neutral,maintain,
-LII,2025-09-17,Oppenheimer,Outperform,Outperform,maintain,
-CRL,2025-10-06,William Blair,Market Perform,Outperform,upgrade,
-CRL,2025-10-03,Evercore ISI Group,Outperform,Outperform,maintain,
-CRL,2025-10-02,Barclays,Equal Weight,Overweight,upgrade,
+COIN,2025-10-03,Rothschild & Co,Neutral,Buy,upgrade
+COIN,2025-08-15,Barclays,Equal Weight,Equal Weight,maintain
+COIN,2025-08-04,"Keefe, Bruyette & Woods",Market Perform,Market Perform,maintain
+LII,2025-10-06,Wells Fargo,Underweight,Equal Weight,upgrade
+LII,2025-09-23,UBS,Neutral,Neutral,maintain
+LII,2025-09-17,Oppenheimer,Outperform,Outperform,maintain
+CRL,2025-10-06,William Blair,Market Perform,Outperform,upgrade
+CRL,2025-10-03,Evercore ISI Group,Outperform,Outperform,maintain
+CRL,2025-10-02,Barclays,Equal Weight,Overweight,upgrade
