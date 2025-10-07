@@ -175,6 +175,14 @@ def fetch_price_target_trend(symbol):
         print(f"Error processing {symbol}: {e}")
         return None
 
+def fmt_date(date_str):
+    try:
+        dt = datetime.fromisoformat(date_str.replace("Z", ""))
+        return dt.strftime("%b %-d")  # 'Oct 3'
+    except:
+        return date_str
+
+
 def send_updates(test_date=None):
     top_100_tickers = fetch_sp500_symbols(top_n=100)
     matched_symbols = get_upgraded_downgraded_symbols(top_100_tickers, API_KEY, debug=False, test_date=test_date)
@@ -244,7 +252,7 @@ def send_updates(test_date=None):
     rows_trend = [
         "`{:<6} {:<8} {:<8} {:<6} {:<6}`".format(
             r.Symbol,
-            r.Latest_Date,
+            fmt_date(r.Latest_Date),
             (r.Latest_Firm or "")[:8],  # truncate firm name
             r.Latest_Target,
             r.Previous_Target,
