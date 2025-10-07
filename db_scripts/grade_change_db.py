@@ -236,29 +236,31 @@ def send_updates(test_date=None):
             df_trends.to_excel(writer, sheet_name="Price Target Trend", index=False)
 
         # Send Price Target Trend to Telegram
-        header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-            "Symbol", "N_Dt", "N_Firm", "N_Tgt", "Old_Tgt", "Trend"
-        )
-        rows_trend = [
-            "`{:<6} {:<12} {:<12} {:<6} {:<6} {:<8}`".format(
-                r.Symbol,
-                r.Latest_Date,
-                (r.Latest_Firm or "")[:12],
-                r.Latest_Target,
-                r.Previous_Target,
-                r.Trend
-            )
-            for r in df_trends.itertuples(index=False)
-        ]
-        message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+    header_trend = "`{:<6} {:<10} {:<10} {:<6} {:<6} {:<6}`".format(
+        "Symbol", "LatestDt", "Firm", "L.Target", "P.Target", "Trend"
+    )
 
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            print("Price trend message sent successfully!")
-        else:
-            print("Failed to send price trend message:", response.text)
+    # Rows
+    rows_trend = [
+        "`{:<6} {:<10} {:<10} {:<6} {:<6} {:<6}`".format(
+            r.Symbol,
+            r.Latest_Date,
+            (r.Latest_Firm or "")[:8],  # truncate firm name
+            r.Latest_Target,
+            r.Previous_Target,
+            r.Trend
+        )
+        for r in df_trends.itertuples(index=False)
+    ]            
+    message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
+    response = requests.post(url, data=payload)
+    if response.status_code == 200:
+        print("Price trend message sent successfully!")
+    else:
+        print("Failed to send price trend message:", response.text)
 
 
 if __name__ == "__main__":
