@@ -251,13 +251,13 @@ def send_updates(test_date=None):
             df_trends.to_excel(writer, sheet_name="Price Target Trend", index=False)
 
         # Send Price Target Trend to Telegram
-    header_trend = "`{:<6} {:<6} {:<8} {:<6} {:<6} {:<1}`".format(
+    header_trend = "`{:<6} {:<6} {:<8} {:<5} {:<5} {:<1}`".format(
         "Symbol", "N.Dt", "Firm", "N.Tgt", "O.Tgt", "T"
     )
 
     # Rows
     rows_trend = [
-        "`{:<6} {:<6} {:<8} {:<6} {:<6} {:<1}`".format(
+        "`{:<6} {:<6} {:<8} {:<5} {:<5} {:<1}`".format(
             r.Symbol,
             fmt_date(r.Latest_Date),
             (r.Latest_Firm or "")[:8],  # truncate firm name
