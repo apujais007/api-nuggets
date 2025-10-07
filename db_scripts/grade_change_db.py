@@ -236,19 +236,18 @@ def send_updates(test_date=None):
             df_trends.to_excel(writer, sheet_name="Price Target Trend", index=False)
 
         # Send Price Target Trend to Telegram
-    header_trend = "`{:<6} {:<10} {:<10} {:<6} {:<6} {:<6}`".format(
-        "Symbol", "LatestDt", "Firm", "L.Target", "P.Target", "Trend"
+    header_trend = "`{:<6} {:<8} {:<8} {:<6} {:<6}`".format(
+        "Symbol", "N.Dt", "Firm", "N.Tgt", "O.Tgt"
     )
 
     # Rows
     rows_trend = [
-        "`{:<6} {:<10} {:<10} {:<6} {:<6} {:<6}`".format(
+        "`{:<6} {:<8} {:<8} {:<6} {:<6}`".format(
             r.Symbol,
             r.Latest_Date,
             (r.Latest_Firm or "")[:8],  # truncate firm name
             r.Latest_Target,
             r.Previous_Target,
-            r.Trend
         )
         for r in df_trends.itertuples(index=False)
     ]            
