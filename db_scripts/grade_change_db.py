@@ -184,7 +184,9 @@ def send_updates(test_date=None):
         print("No upgrades/downgrades found.")
         return
 
+    # -----------------------------
     # Grades updates
+    # -----------------------------
     df_grades = get_top_grade_changes(matched_symbols, API_KEY, top_n=3, debug=False)
 
     if os.path.exists(csv_path):
@@ -194,7 +196,10 @@ def send_updates(test_date=None):
     else:
         df_combined = df_grades
 
-    df_combined.to_csv(csv_path, index=False)
+    # Save grades to Excel (first tab)
+    excel_path = csv_path.replace(".csv", ".xlsx")
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        df_combined.to_excel(writer, sheet_name="Grades Updates", index=False)
 
     # -----------------------------
     # Send Grades Updates to Telegram
@@ -226,31 +231,36 @@ def send_updates(test_date=None):
 
     df_trends = pd.DataFrame(trend_records) if trend_records else pd.DataFrame()
 
-    # Send Price Target Trend to Telegram
-if not df_trends.empty:
-    header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-        "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
-    )
-    rows_trend = [
-        "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-            r.Symbol,
-            (r.Latest_Firm or "")[:12],
-            r.Latest_Target,
-            r.Previous_Date,
-            r.Trend,
-            r.Latest_Date  # Make sure order matches header
-        )
-        for r in df_trends.itertuples(index=False)
-    ]
-    message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+    # Save price trend in second tab
+    if not df_trends.empty:
+        with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a") as writer:
+            df_trends.to_excel(writer, sheet_name="Price Target Trend", index=False)
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
-    response = requests.post(url, data=payload)
-    if response.status_code == 200:
-        print("Price trend message sent successfully!")
-    else:
-        print("Failed to send price trend message:", response.text)
+        # Send Price Target Trend to Telegram
+        header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+            "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
+        )
+        rows_trend = [
+            "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+                r.Symbol,
+                r.Latest_Date,
+                (r.Latest_Firm or "")[:12],
+                r.Latest_Target,
+                r.Previous_Date,
+                r.Trend
+            )
+            for r in df_trends.itertuples(index=False)
+        ]
+        message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print("Price trend message sent successfully!")
+        else:
+            print("Failed to send price trend message:", response.text)
+
 
 if __name__ == "__main__":
     test_date = None
