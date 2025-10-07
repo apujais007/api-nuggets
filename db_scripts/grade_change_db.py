@@ -147,7 +147,7 @@ def send_updates(test_date=None):
 
   symbols_to_check=matches
   df_grades = get_top_grade_changes(symbols_to_check, api_key, top_n=3, debug=False)
-  df_grades['fetch_date'] = datetime.today().strftime("%Y-%m-%d")  
+  #df_grades['fetch_date'] = datetime.today().strftime("%Y-%m-%d")  
 
   if os.path.exists(csv_path):
     df_old = pd.read_csv(csv_path)
