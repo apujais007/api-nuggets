@@ -182,7 +182,14 @@ def fmt_date(date_str):
     except:
         return date_str
 
-
+def trend_arrow(trend):
+    if trend == "Raised":
+        return "↑"
+    elif trend == "Lowered":
+        return "↓"
+    else:
+        return "→"
+        
 def send_updates(test_date=None):
     top_100_tickers = fetch_sp500_symbols(top_n=100)
     matched_symbols = get_upgraded_downgraded_symbols(top_100_tickers, API_KEY, debug=False, test_date=test_date)
@@ -245,17 +252,18 @@ def send_updates(test_date=None):
 
         # Send Price Target Trend to Telegram
     header_trend = "`{:<6} {:<8} {:<8} {:<6} {:<6}`".format(
-        "Symbol", "N.Dt", "Firm", "N.Tgt", "O.Tgt"
+        "Symbol", "N.Dt", "Firm", "N.Tgt", "O.Tgt", "T"
     )
 
     # Rows
     rows_trend = [
-        "`{:<6} {:<8} {:<8} {:<6} {:<6}`".format(
+        "`{:<6} {:<8} {:<8} {:<6} {:<6} {:<2}`".format(
             r.Symbol,
             fmt_date(r.Latest_Date),
             (r.Latest_Firm or "")[:8],  # truncate firm name
             r.Latest_Target,
             r.Previous_Target,
+            trend_arrow(r.Trend)
         )
         for r in df_trends.itertuples(index=False)
     ]            
