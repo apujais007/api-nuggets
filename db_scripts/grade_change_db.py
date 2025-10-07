@@ -11,17 +11,6 @@ os.makedirs(os.path.dirname(csv_path), exist_ok=True)
 API_KEY = os.environ.get("FMP_API_KEY")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
-
-# def append_df_to_csv(df, file_path=csv_path):
-#     if df.empty:
-#         return 0
-
-#     if not os.path.isfile(file_path):
-#         df.to_csv(file_path, mode="w", header=True, index=False)
-#     else:
-#         df.to_csv(file_path, mode="a", header=False, index=False)
-
-#     return len(df)
     
 def get_json(url, params=None):
     if params is None:
@@ -136,57 +125,136 @@ def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
     df = pd.DataFrame(all_records)
     return df
 
+# -------------------------------
+# FUNCTION: Fetch price target trend
+# -------------------------------
+def fetch_price_target_trend(symbol):
+    url = f"https://financialmodelingprep.com/stable/price-target-news?symbol={symbol}&page=0&limit=10&apikey={API_KEY}"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            print(f"Error fetching {symbol}: {response.status_code}")
+            return None
+        data = response.json()
+        if not data or len(data) < 2:
+            return None
+
+        # Sort by date descending and take latest 2
+        data_sorted = sorted(data, key=lambda x: x["publishedDate"], reverse=True)[:2]
+        latest = data_sorted[0]
+        previous = data_sorted[1]
+
+        latest_target = latest.get("priceTarget") or latest.get("adjPriceTarget")
+        prev_target = previous.get("priceTarget") or previous.get("adjPriceTarget")
+        if latest_target is None or prev_target is None:
+            return None
+
+        if latest_target > prev_target:
+            trend = "Raised"
+        elif latest_target < prev_target:
+            trend = "Lowered"
+        else:
+            trend = "Unchanged"
+
+        def clean_date(dt_str):
+            return datetime.fromisoformat(dt_str.replace("Z", "")).strftime("%Y-%m-%d")
+
+        return {
+            "Symbol": symbol,
+            "Latest Date": clean_date(latest["publishedDate"]),
+            "Latest Analyst": latest.get("analystName"),
+            "Latest Firm": latest.get("analystCompany"),
+            "Latest Target": latest_target,
+            "Previous Date": clean_date(previous["publishedDate"]),
+            "Previous Analyst": previous.get("analystName"),
+            "Previous Firm": previous.get("analystCompany"),
+            "Previous Target": prev_target,
+            "Trend": trend
+        }
+
+    except Exception as e:
+        print(f"Error processing {symbol}: {e}")
+        return None
+
 def send_updates(test_date=None):
-    
-  top_100_tickers = fetch_sp500_symbols(top_n=100)
-  api_key = API_KEY
+    top_100_tickers = fetch_sp500_symbols(top_n=100)
+    matched_symbols = get_upgraded_downgraded_symbols(top_100_tickers, API_KEY, debug=False, test_date=test_date)
 
-  #matches = get_upgraded_downgraded_symbols(symbols, api_key,debug=True)
-  #matches = get_upgraded_downgraded_symbols(top_100_tickers, api_key,debug=True, test_date="2025-09-15")
-  matches = get_upgraded_downgraded_symbols(top_100_tickers, api_key,debug=False)
+    if not matched_symbols:
+        print("No upgrades/downgrades found.")
+        return
 
-  symbols_to_check=matches
-  df_grades = get_top_grade_changes(symbols_to_check, api_key, top_n=3, debug=False)
-  #df_grades['fetch_date'] = datetime.today().strftime("%Y-%m-%d")  
+    # Grades updates
+    df_grades = get_top_grade_changes(matched_symbols, API_KEY, top_n=3, debug=False)
 
-  if os.path.exists(csv_path):
-    df_old = pd.read_csv(csv_path)
-    df_combined = pd.concat([df_old, df_grades], ignore_index=True)
-    df_combined.drop_duplicates(inplace=True)
-  else:
-    df_combined = df_grades
-  
-  df_combined.to_csv(csv_path, index=False)    
-  header = "`{:<6} {:<10} {:<12} {:<6}`".format(
-    "Symbol", "Date","Company", "Action"
-    )
+    if os.path.exists(csv_path):
+        df_old = pd.read_csv(csv_path)
+        df_combined = pd.concat([df_old, df_grades], ignore_index=True)
+        df_combined.drop_duplicates(inplace=True)
+    else:
+        df_combined = df_grades
 
-  rows = [
-    "`{:<6} {:<10} {:<12} {:<6}`".format(
-        r.symbol, r.date,r.gradingCompany[:12], r.action[:6]
-    )
-    for r in df_grades.itertuples(index=False)
-  ]
+    df_combined.to_csv(csv_path, index=False)
 
-  message = "*Today's Stock Grading Updates:*\n\n" + "\n".join([header] + rows)
+    # -----------------------------
+    # Send Grades Updates to Telegram
+    # -----------------------------
+    if not df_grades.empty:
+        header = "`{:<6} {:<10} {:<12} {:<6}`".format("Symbol", "Date", "Company", "Action")
+        rows = [
+            "`{:<6} {:<10} {:<12} {:<6}`".format(r.symbol, r.date, r.gradingCompany[:12], r.action[:6])
+            for r in df_grades.itertuples(index=False)
+        ]
+        message_grades = "*Today's Stock Grading Updates:*\n\n" + "\n".join([header] + rows)
 
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": CHAT_ID, "text": message_grades, "parse_mode": "Markdown"}
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print("Grades message sent successfully!")
+        else:
+            print("Failed to send grades message:", response.text)
 
-  url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-  payload = {
-    "chat_id": CHAT_ID,
-    "text": message,
-    "parse_mode": "Markdown"
-  }
+    # -----------------------------
+    # Price Target Trend
+    # -----------------------------
+    trend_records = []
+    for sym in matched_symbols:
+        trend = fetch_price_target_trend(sym)
+        if trend:
+            trend_records.append(trend)
 
-  response = requests.post(url, data=payload)
-  if response.status_code == 200:
-    print("Message sent successfully!")
-  else:
-    print("Failed to send message:", response.text)
+    df_trends = pd.DataFrame(trend_records) if trend_records else pd.DataFrame()
+
+    # Send Price Target Trend to Telegram
+    if not df_trends.empty:
+        header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+            "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
+        )
+        rows_trend = [
+            "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+                r.Symbol,
+                r["Latest Date"],
+                (r["Latest Firm"] or "")[:12],
+                r["Latest Target"],
+                r["Previous Date"],
+                r["Trend"]
+            )
+            for r in df_trends.itertuples(index=False)
+        ]
+        message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
+        response = requests.post(url, data=payload)
+        if response.status_code == 200:
+            print("Price trend message sent successfully!")
+        else:
+            print("Failed to send price trend message:", response.text)
 
 
 if __name__ == "__main__":
     test_date = None
     if len(sys.argv) > 1:
-        test_date = sys.argv[1]  # first argument after script name
+        test_date = sys.argv[1]
     send_updates(test_date=test_date)
