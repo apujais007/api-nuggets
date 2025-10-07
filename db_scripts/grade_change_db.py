@@ -227,31 +227,30 @@ def send_updates(test_date=None):
     df_trends = pd.DataFrame(trend_records) if trend_records else pd.DataFrame()
 
     # Send Price Target Trend to Telegram
-    if not df_trends.empty:
-        header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-            "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
+if not df_trends.empty:
+    header_trend = "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+        "Symbol", "Latest Date", "Latest Firm", "Latest Target", "Previous Date", "Trend"
+    )
+    rows_trend = [
+        "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
+            r.Symbol,
+            (r.Latest_Firm or "")[:12],
+            r.Latest_Target,
+            r.Previous_Date,
+            r.Trend,
+            r.Latest_Date  # Make sure order matches header
         )
-        rows_trend = [
-            "`{:<6} {:<12} {:<12} {:<12} {:<12} {:<8}`".format(
-                r.Symbol,
-                r["Latest Date"],
-                (r["Latest Firm"] or "")[:12],
-                r["Latest Target"],
-                r["Previous Date"],
-                r["Trend"]
-            )
-            for r in df_trends.itertuples(index=False)
-        ]
-        message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
+        for r in df_trends.itertuples(index=False)
+    ]
+    message_trend = "*Price Target Trend Summary:*\n\n" + "\n".join([header_trend] + rows_trend)
 
-        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-        payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
-        response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            print("Price trend message sent successfully!")
-        else:
-            print("Failed to send price trend message:", response.text)
-
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": message_trend, "parse_mode": "Markdown"}
+    response = requests.post(url, data=payload)
+    if response.status_code == 200:
+        print("Price trend message sent successfully!")
+    else:
+        print("Failed to send price trend message:", response.text)
 
 if __name__ == "__main__":
     test_date = None
