@@ -33,6 +33,7 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
         run: |
           python db_scripts/grade_change_db.py
+          python db_scripts/penny_losers_gainers.py
 
       - name: Commit and push CSV
         run: |
