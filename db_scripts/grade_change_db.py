@@ -3,7 +3,6 @@ import sys
 import requests
 import pandas as pd
 from datetime import datetime, timedelta, date
-import sqlite3
 
 csv_path = "data/grades_updates.csv"
 os.makedirs(os.path.dirname(csv_path), exist_ok=True)
