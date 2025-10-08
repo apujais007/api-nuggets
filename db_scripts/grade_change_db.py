@@ -204,24 +204,20 @@ def send_updates(test_date=None):
 
     if os.path.exists(csv_path):
         df_old = pd.read_csv(csv_path)
-        print("Old DataFrame (df_old):")
-        print(df_old)
-
-        print("\nNew Grades DataFrame (df_grades):")
-        print(df_grades)
         df_combined = pd.concat([df_old, df_grades], ignore_index=True)
-        print("\nCombined DataFrame (df_combined):")
-        print(df_combined)
         df_combined.drop_duplicates(inplace=True)
     else:
         df_combined = df_grades
 
     # Save grades to Excel (first tab)
+    excel_path = os.path.abspath(csv_path.replace(".csv", ".xlsx"))
+    print("Excel will be saved at:", excel_path)
     excel_path = csv_path.replace(".csv", ".xlsx")
     with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
         df_combined.to_excel(writer, sheet_name="Grades Updates", index=False)
 
-    print(f"Grades saved to Excel: {excel_path}")
+    
+    
 
     # -----------------------------
     # Send Grades Updates to Telegram
