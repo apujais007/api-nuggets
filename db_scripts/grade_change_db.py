@@ -4,8 +4,8 @@ import requests
 import pandas as pd
 from datetime import datetime, timedelta, date
 
-csv_path = "data/grades_updates.csv"
-os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+excel_path = "data/grades_updates.xlsx"
+os.makedirs(os.path.dirname(excel_path), exist_ok=True)
 
 API_KEY = os.environ.get("FMP_API_KEY")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -202,22 +202,16 @@ def send_updates(test_date=None):
     # -----------------------------
     df_grades = get_top_grade_changes(matched_symbols, API_KEY, top_n=3, debug=False)
 
-    if os.path.exists(csv_path):
-        df_old = pd.read_csv(csv_path)
+    if os.path.exists(excel_path):
+        df_old = pd.read_excel(excel_path, sheet_name="Grades Updates")
         df_combined = pd.concat([df_old, df_grades], ignore_index=True)
         df_combined.drop_duplicates(inplace=True)
     else:
         df_combined = df_grades
-
+        
     # Save grades to Excel (first tab)
-    excel_path = os.path.abspath(csv_path.replace(".csv", ".xlsx"))
-    print("Excel will be saved at:", excel_path)
-    excel_path = csv_path.replace(".csv", ".xlsx")
     with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
         df_combined.to_excel(writer, sheet_name="Grades Updates", index=False)
-
-    
-    
 
     # -----------------------------
     # Send Grades Updates to Telegram
