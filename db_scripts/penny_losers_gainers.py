@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 excel_path = "data/grades_updates.xlsx"
 os.makedirs(os.path.dirname(excel_path), exist_ok=True)
-
+TOP_N = 5
 API_KEY = os.environ.get("FMP_API_KEY")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
