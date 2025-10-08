@@ -3,10 +3,12 @@
   import pandas as pd
   from datetime import datetime, timedelta
 
-  API_KEY = 'rPpRIiVv6rTHrKxWVZwqX0huJOqSJVxq'
+  excel_path = "data/grades_updates.xlsx"
+  os.makedirs(os.path.dirname(excel_path), exist_ok=True)
 
-  INVESTMENT = 20000  # total capital
-  TOP_N = 5           # number of stocks to pick
+  API_KEY = os.environ.get("FMP_API_KEY")
+  BOT_TOKEN = os.environ.get("BOT_TOKEN")
+  CHAT_ID = os.environ.get("CHAT_ID")
 
   def get_penny_stocks():
       """Fetch penny stocks strictly from NASDAQ/NYSE that exist on Yahoo Finance"""
@@ -231,6 +233,27 @@ def pick_sp500_stocks_down(test_date=None):
     results.sort(key=lambda x: x['score'], reverse=True)
     return results[:TOP_N]        
 
+def append_df_to_excel(df, sheet_name, excel_path):
+    """
+    Append a DataFrame to a sheet in an Excel file.
+    If the sheet/file doesn't exist, it creates them.
+    """
+    if os.path.exists(excel_path):
+        # Read existing sheet if it exists
+        try:
+            existing_df = pd.read_excel(excel_path, sheet_name=sheet_name, engine="openpyxl")
+            df_combined = pd.concat([existing_df, df], ignore_index=True)
+            df_combined.drop_duplicates(inplace=True)
+        except ValueError:
+            # Sheet doesn't exist yet
+            df_combined = df
+    else:
+        df_combined = df
+
+    # Write back to Excel
+    with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a" if os.path.exists(excel_path) else "w") as writer:
+        df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
+      
 if __name__ == "__main__":
     #test_date = "2025-09-28"  # Change for backtesting
     test_date = None
@@ -259,3 +282,11 @@ if __name__ == "__main__":
         print(f"\nBottom S&P500 Stock Picks (Downward) as of {test_date}:")
         pd.set_option('display.max_colwidth', None)
         print(df_sp500_down)    
+
+    if not df_penny.empty:
+      append_df_to_excel(df_penny, "Top Penny Stocks", excel_path)
+    if not df_sp500.empty:
+      append_df_to_excel(df_sp500, "Top SP500 Stocks", excel_path)
+    if not df_sp500_down.empty:
+      append_df_to_excel(df_sp500_down, "Bottom SP500 Stocks", excel_path)
+    print(f"All stock pick data appended to Excel: {excel_path}")
