@@ -1,137 +1,53 @@
-  import os
-  import requests
-  import pandas as pd
-  from datetime import datetime, timedelta
+import os
+import requests
+import pandas as pd
+from datetime import datetime, timedelta
 
-  excel_path = "data/grades_updates.xlsx"
-  os.makedirs(os.path.dirname(excel_path), exist_ok=True)
+excel_path = "data/grades_updates.xlsx"
+os.makedirs(os.path.dirname(excel_path), exist_ok=True)
 
-  API_KEY = os.environ.get("FMP_API_KEY")
-  BOT_TOKEN = os.environ.get("BOT_TOKEN")
-  CHAT_ID = os.environ.get("CHAT_ID")
+API_KEY = os.environ.get("FMP_API_KEY")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
-  def get_penny_stocks():
-      """Fetch penny stocks strictly from NASDAQ/NYSE that exist on Yahoo Finance"""
-      url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=10000000&priceLowerThan=5&limit=1000&apikey={API_KEY}"
-      r = requests.get(url)
-      data = r.json()
-      
-      symbols = []
-      for item in data:
-          exchange = item.get('exchange', '')
-          symbol = item.get('symbol', '')
-          # Only NASDAQ or NYSE
-          if exchange in ["NASDAQ", "NYSE"]:
-              # Remove any foreign suffixes or invalid tickers
-              if '.' not in symbol and '-' not in symbol:
-                  symbols.append(symbol)
-      return symbols
+def get_penny_stocks():
+    """Fetch penny stocks strictly from NASDAQ/NYSE that exist on Yahoo Finance"""
+    url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=10000000&priceLowerThan=5&limit=1000&apikey={API_KEY}"
+    r = requests.get(url)
+    data = r.json()
+    
+    symbols = []
+    for item in data:
+        exchange = item.get('exchange', '')
+        symbol = item.get('symbol', '')
+        # Only NASDAQ or NYSE
+        if exchange in ["NASDAQ", "NYSE"]:
+            # Remove any foreign suffixes or invalid tickers
+            if '.' not in symbol and '-' not in symbol:
+                symbols.append(symbol)
+    return symbols
 
-  def get_sp500_symbols():
-      """Fetch all SP500 symbols"""
-      url = f"https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={API_KEY}"
-      r = requests.get(url)
-      data = r.json()
-      return [item['symbol'] for item in data]
+def get_sp500_symbols():
+    """Fetch all SP500 symbols"""
+    url = f"https://financialmodelingprep.com/api/v3/sp500_constituent?apikey={API_KEY}"
+    r = requests.get(url)
+    data = r.json()
+    return [item['symbol'] for item in data]
 
-  def get_historical(symbol, limit=20, test_date=None):
-      """Fetch last `limit` days historical prices with volume"""
-      url = f"https://financialmodelingprep.com/stable/historical-price-eod/full?symbol={symbol}&apikey={API_KEY}"
-      r = requests.get(url)
-      if r.status_code != 200:
-          print(f"Error fetching {symbol}: status code {r.status_code}")
-          return None
-      try:
-          data = r.json()
-      except Exception as e:
-          print(f"Error decoding JSON for {symbol}: {e}")
-          return None
-      if not data:
-          return None
-
-      df = pd.DataFrame(data[:limit])
-      if df.empty:
-          return None
-
-      df['date'] = pd.to_datetime(df['date'])
-      df = df[::-1]  # oldest → newest
-
-      if test_date:
-          test_dt = pd.to_datetime(test_date)
-          df = df[df['date'] <= test_dt]
-
-      return df
-
-  def score_stock(df):
-      """Compute score based on breakout and volume criteria and return breakdown"""
-      if df is None or len(df) < 10:
-          return 0, "", [], []
-
-      df['ma5'] = df['close'].rolling(5).mean()
-      df['ma10'] = df['close'].rolling(10).mean()
-      df['pct_change'] = df['close'].pct_change() * 100
-      score = 0
-      breakdown = []
-
-      # 1️⃣ Price above MA5 and MA10
-      if df['close'].iloc[-1] > df['ma5'].iloc[-1] and df['close'].iloc[-1] > df['ma10'].iloc[-1]:
-          score += 1
-          breakdown.append("Price above MA5 & MA10")
-
-      # 2️⃣ Recent price surge (>5%)
-      if df['pct_change'].iloc[-1] > 5:
-          score += 1
-          breakdown.append("Recent price surge >5%")
-
-      # 3️⃣ Previous day price surge (>3%)
-      if df['pct_change'].iloc[-2] > 3:
-          score += 1
-          breakdown.append("Previous day surge >3%")
-
-      # 4️⃣ Near 20-day high breakout
-      high_20 = df['close'].rolling(20).max().iloc[-1]
-      if df['close'].iloc[-1] >= 0.95 * high_20:
-          score += 1
-          breakdown.append("Near 20-day high breakout")
-
-      # 5️⃣ Volume surge
-      last_5_volume = []
-      if 'volume' in df.columns:
-          df['vol_ma5'] = df['volume'].rolling(5).mean()
-          last_5_volume = df['volume'].iloc[-5:].tolist()
-          if df['volume'].iloc[-1] > 1.5 * df['vol_ma5'].iloc[-1]:
-              score += 1
-              breakdown.append("Volume surge >1.5 * 5-day avg")
-
-      # Last 5 closes and volumes
-      last_5 = df.iloc[-5:]
-      last_5_close = [f"{d.strftime('%Y-%m-%d')}: {c}" for d, c in zip(last_5['date'], last_5['close'])]
-      last_5_volume = [f"{d.strftime('%Y-%m-%d')}: {int(v):,}" for d, v in zip(last_5['date'], last_5['volume'])]
-
-      return score, "; ".join(breakdown), last_5_close, last_5_volume
-
-  def pick_stocks(test_date=None):
-      symbols = get_penny_stocks()
-      results = []
-
-      for sym in symbols:
-          df = get_historical(sym, test_date=test_date)
-          sc, breakdown, last_5_close, last_5_volume = score_stock(df)
-          if sc > 1:  # only strong candidates
-              results.append({
-                  "symbol": sym,
-                  "score": sc,
-                  "breakdown": breakdown,
-                  "last_5_close": last_5_close,
-                  "last_5_volume": last_5_volume
-              })
-
-      if not results:
-          print("No stocks matching criteria on test date.")
-          return []
-
-      results.sort(key=lambda x: x['score'], reverse=True)
-      return results[:TOP_N]
+def get_historical(symbol, limit=20, test_date=None):
+    """Fetch last `limit` days historical prices with volume"""
+    url = f"https://financialmodelingprep.com/stable/historical-price-eod/full?symbol={symbol}&apikey={API_KEY}"
+    r = requests.get(url)
+    if r.status_code != 200:
+        print(f"Error fetching {symbol}: status code {r.status_code}")
+        return None
+    try:
+        data = r.json()
+    except Exception as e:
+        print(f"Error decoding JSON for {symbol}: {e}")
+        return None
+    if not data:
+        return No
 
 def score_stock_down(df):
     """Compute score for downward breakout stocks"""
