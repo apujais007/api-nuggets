@@ -47,7 +47,91 @@ def get_historical(symbol, limit=20, test_date=None):
         print(f"Error decoding JSON for {symbol}: {e}")
         return None
     if not data:
-        return No
+        return None
+
+    df = pd.DataFrame(data[:limit])
+    if df.empty:
+        return None
+
+    df['date'] = pd.to_datetime(df['date'])
+    df = df[::-1]  # oldest → newest
+
+    if test_date:
+        test_dt = pd.to_datetime(test_date)
+        df = df[df['date'] <= test_dt]
+
+    return df
+
+def score_stock(df):
+    """Compute score based on breakout and volume criteria and return breakdown"""
+    if df is None or len(df) < 10:
+        return 0, "", [], []
+
+    df['ma5'] = df['close'].rolling(5).mean()
+    df['ma10'] = df['close'].rolling(10).mean()
+    df['pct_change'] = df['close'].pct_change() * 100
+    score = 0
+    breakdown = []
+
+    # 1️⃣ Price above MA5 and MA10
+    if df['close'].iloc[-1] > df['ma5'].iloc[-1] and df['close'].iloc[-1] > df['ma10'].iloc[-1]:
+        score += 1
+        breakdown.append("Price above MA5 & MA10")
+
+    # 2️⃣ Recent price surge (>5%)
+    if df['pct_change'].iloc[-1] > 5:
+        score += 1
+        breakdown.append("Recent price surge >5%")
+
+    # 3️⃣ Previous day price surge (>3%)
+    if df['pct_change'].iloc[-2] > 3:
+        score += 1
+        breakdown.append("Previous day surge >3%")
+
+    # 4️⃣ Near 20-day high breakout
+    high_20 = df['close'].rolling(20).max().iloc[-1]
+    if df['close'].iloc[-1] >= 0.95 * high_20:
+        score += 1
+        breakdown.append("Near 20-day high breakout")
+
+    # 5️⃣ Volume surge
+    last_5_volume = []
+    if 'volume' in df.columns:
+        df['vol_ma5'] = df['volume'].rolling(5).mean()
+        last_5_volume = df['volume'].iloc[-5:].tolist()
+        if df['volume'].iloc[-1] > 1.5 * df['vol_ma5'].iloc[-1]:
+            score += 1
+            breakdown.append("Volume surge >1.5 * 5-day avg")
+
+    # Last 5 closes and volumes
+    last_5 = df.iloc[-5:]
+    last_5_close = [f"{d.strftime('%Y-%m-%d')}: {c}" for d, c in zip(last_5['date'], last_5['close'])]
+    last_5_volume = [f"{d.strftime('%Y-%m-%d')}: {int(v):,}" for d, v in zip(last_5['date'], last_5['volume'])]
+
+    return score, "; ".join(breakdown), last_5_close, last_5_volume
+
+def pick_stocks(test_date=None):
+    symbols = get_penny_stocks()
+    results = []
+
+    for sym in symbols:
+        df = get_historical(sym, test_date=test_date)
+        sc, breakdown, last_5_close, last_5_volume = score_stock(df)
+        if sc > 1:  # only strong candidates
+            results.append({
+                "symbol": sym,
+                "score": sc,
+                "breakdown": breakdown,
+                "last_5_close": last_5_close,
+                "last_5_volume": last_5_volume
+            })
+
+    if not results:
+        print("No stocks matching criteria on test date.")
+        return []
+
+    results.sort(key=lambda x: x['score'], reverse=True)
+    return results[:TOP_N]  # Make sure you define TOP_N somewhere
 
 def score_stock_down(df):
     """Compute score for downward breakout stocks"""
