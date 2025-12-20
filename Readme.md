@@ -1,3 +1,3 @@
 # My Repo
-# Using Python to create something great
+# Python play
 # Step by Step
