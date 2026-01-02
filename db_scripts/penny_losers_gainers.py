@@ -337,7 +337,7 @@ def append_df_to_excel(df, sheet_name, excel_path):
         try:
             existing_df = pd.read_excel(excel_path, sheet_name=sheet_name, engine="openpyxl")
             df_combined = pd.concat([existing_df, df], ignore_index=True)
-            df_combined.drop_duplicates(inplace=True)
+            df_combined.drop_duplicates(subset=["symbol"], inplace=True)
         except ValueError:
             # Sheet doesn't exist yet
             df_combined = df
