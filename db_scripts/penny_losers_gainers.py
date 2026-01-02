@@ -345,7 +345,7 @@ def append_df_to_excel(df, sheet_name, excel_path):
         df_combined = df
 
     # Write back to Excel
-    with pd.ExcelWriter(excel_path, engine="openpyxl", mode="a" if os.path.exists(excel_path) else "w") as writer:
+    with pd.ExcelWriter(excel_path,engine="openpyxl",mode="a",if_sheet_exists="replace") as writer:
         df_combined.to_excel(writer, sheet_name=sheet_name, index=False)
       
 
