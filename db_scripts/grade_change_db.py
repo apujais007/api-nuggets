@@ -83,6 +83,7 @@ def get_upgraded_downgraded_symbols(symbols, api_key, debug=False, test_date=Non
     return result
 
 
+
 def get_top_grade_changes(symbols, api_key, top_n=3, debug=False):
     """
     Fetch the top N grade changes per symbol and return a combined DataFrame.
@@ -205,6 +206,12 @@ def send_updates(test_date=None):
     if os.path.exists(excel_path):
         df_old = pd.read_excel(excel_path, sheet_name="Grades Updates")
         df_combined = pd.concat([df_old, df_grades], ignore_index=True)
+
+        # Convert any list-valued cells to tuples so pandas can hash them for drop_duplicates
+        list_cols = df_combined.columns[df_combined.applymap(lambda x: isinstance(x, list)).any()].tolist()
+        for c in list_cols:
+            df_combined[c] = df_combined[c].apply(lambda x: tuple(x) if isinstance(x, list) else x)
+
         df_combined.drop_duplicates(inplace=True)
     else:
         df_combined = df_grades
