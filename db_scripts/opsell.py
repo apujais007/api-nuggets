@@ -4,11 +4,9 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 
-API_KEY = ''  # Your FinancialModelingPrep API key here
-
-TELEGRAM_BOT_TOKEN = ''
-TELEGRAM_CHAT_ID = ''
-
+API_KEY = os.environ.get("FMP_API_KEY")
+BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # =============================
 # CONFIGURATION
