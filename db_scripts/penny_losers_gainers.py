@@ -77,34 +77,34 @@ def request_with_retries(url, timeout=30, allowed_statuses=(200,)):
     return None
 
 
-def get_penny_stocks():
-    """Fetch penny stocks strictly from NASDAQ/NYSE that exist on Yahoo Finance"""
-    url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=10000000&priceLowerThan=5&limit=1000&apikey={API_KEY}"
-    r = request_with_retries(url)
-    if r is None:
-        return []
-    try:
-        data = r.json()
-    except Exception as e:
-        print(f"Error decoding JSON for penny stocks: {e}")
-        return []
+# def get_penny_stocks():
+#     """Fetch penny stocks strictly from NASDAQ/NYSE that exist on Yahoo Finance"""
+#     url = f"https://financialmodelingprep.com/api/v3/stock-screener?marketCapMoreThan=10000000&priceLowerThan=5&limit=1000&apikey={API_KEY}"
+#     r = request_with_retries(url)
+#     if r is None:
+#         return []
+#     try:
+#         data = r.json()
+#     except Exception as e:
+#         print(f"Error decoding JSON for penny stocks: {e}")
+#         return []
 
-    symbols = []
-    if not isinstance(data, list):
-        print(f"Unexpected penny stocks API response: {data}")
-        return []
+#     symbols = []
+#     if not isinstance(data, list):
+#         print(f"Unexpected penny stocks API response: {data}")
+#         return []
 
-    for item in data:
-        if not isinstance(item, dict):
-            continue
-        exchange = item.get('exchange', '')
-        symbol = item.get('symbol', '')
-        # Only NASDAQ or NYSE
-        if exchange in ["NASDAQ", "NYSE"]:
-            # Remove any foreign suffixes or invalid tickers
-            if '.' not in symbol and '-' not in symbol:
-                symbols.append(symbol)
-    return symbols
+#     for item in data:
+#         if not isinstance(item, dict):
+#             continue
+#         exchange = item.get('exchange', '')
+#         symbol = item.get('symbol', '')
+#         # Only NASDAQ or NYSE
+#         if exchange in ["NASDAQ", "NYSE"]:
+#             # Remove any foreign suffixes or invalid tickers
+#             if '.' not in symbol and '-' not in symbol:
+#                 symbols.append(symbol)
+#     return symbols
 
 
 def get_sp500_symbols():
@@ -211,30 +211,30 @@ def score_stock(df):
     return score, "; ".join(breakdown), last_5_close, last_5_volume
 
 
-def pick_stocks(test_date=None):
-    symbols = get_penny_stocks()
-    results = []
+# def pick_stocks(test_date=None):
+#     symbols = get_penny_stocks()
+#     results = []
 
-    for sym in symbols:
-        df = get_historical(sym, test_date=test_date)
-        # pause briefly to avoid hitting burst limit
-        time.sleep(PER_REQUEST_PAUSE)
-        sc, breakdown, last_5_close, last_5_volume = score_stock(df)
-        if sc > 1:  # only strong candidates
-            results.append({
-                "symbol": sym,
-                "score": sc,
-                "breakdown": breakdown,
-                "last_5_close": last_5_close,
-                "last_5_volume": last_5_volume
-            })
+#     for sym in symbols:
+#         df = get_historical(sym, test_date=test_date)
+#         # pause briefly to avoid hitting burst limit
+#         time.sleep(PER_REQUEST_PAUSE)
+#         sc, breakdown, last_5_close, last_5_volume = score_stock(df)
+#         if sc > 1:  # only strong candidates
+#             results.append({
+#                 "symbol": sym,
+#                 "score": sc,
+#                 "breakdown": breakdown,
+#                 "last_5_close": last_5_close,
+#                 "last_5_volume": last_5_volume
+#             })
 
-    if not results:
-        print("No stocks matching criteria on test date.")
-        return []
+#     if not results:
+#         print("No stocks matching criteria on test date.")
+#         return []
 
-    results.sort(key=lambda x: x['score'], reverse=True)
-    return results[:TOP_N]  # Make sure you define TOP_N somewhere
+#     results.sort(key=lambda x: x['score'], reverse=True)
+#     return results[:TOP_N]  # Make sure you define TOP_N somewhere
 
 
 def score_stock_down(df):
@@ -352,14 +352,14 @@ def append_df_to_excel(df, sheet_name, excel_path):
 if __name__ == "__main__":
     #test_date = "2025-09-28"  # Change for backtesting
     test_date = None
-    # Top Penny Stocks
-    penny_symbols = get_penny_stocks()
-    top_penny = pick_stocks(test_date=test_date)  # <-- use pick_stocks which handles symbol iteration
-    df_penny = pd.DataFrame(top_penny) if top_penny else pd.DataFrame()
-    if not df_penny.empty:
-        print(f"Top Penny Stock Picks as of {test_date}:")
-        pd.set_option('display.max_colwidth', None)
-        print(df_penny)
+    # # Top Penny Stocks
+    # penny_symbols = get_penny_stocks()
+    # top_penny = pick_stocks(test_date=test_date)  # <-- use pick_stocks which handles symbol iteration
+    # df_penny = pd.DataFrame(top_penny) if top_penny else pd.DataFrame()
+    # if not df_penny.empty:
+    #     print(f"Top Penny Stock Picks as of {test_date}:")
+    #     pd.set_option('display.max_colwidth', None)
+    #     print(df_penny)
 
     # Top SP500 Stocks
     sp500_symbols = get_sp500_symbols()
@@ -378,8 +378,8 @@ if __name__ == "__main__":
         pd.set_option('display.max_colwidth', None)
         print(df_sp500_down)    
 
-    if not df_penny.empty:
-      append_df_to_excel(df_penny, "Top Penny Stocks", excel_path)
+    # if not df_penny.empty:
+    #   append_df_to_excel(df_penny, "Top Penny Stocks", excel_path)
     if not df_sp500.empty:
       append_df_to_excel(df_sp500, "Top SP500 Stocks", excel_path)
     if not df_sp500_down.empty:
